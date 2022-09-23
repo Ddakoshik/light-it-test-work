@@ -10,12 +10,13 @@ import { GiphyService } from './giphy.service';
 export class AppComponent {
 
   searchTerm: string  = '';
+  // searchTerm: string  = '';
 
   @HostListener('window:scroll')
   onScroll() {
-    if ((window.innerHeight + window.scrollY) >= document.body.scrollHeight) {
-      this.giphyService.next();
-    }
+      if ((window.innerHeight + window.scrollY) >= document.body.scrollHeight) {
+        this.giphyService.next();
+      }
   }
 
   constructor(public giphyService: GiphyService) { }
