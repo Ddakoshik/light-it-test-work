@@ -4,13 +4,12 @@ import { HttpClient } from '@angular/common/http';
 import { GiphyResult, GifData, SearchReqeust } from './gif.interface';
 
 import { Subject, Observable } from 'rxjs';
-import { filter, distinct , tap, distinctUntilChanged } from 'rxjs/operators';
+import { filter, distinct, tap, distinctUntilChanged } from 'rxjs/operators';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class GiphyService {
-
   static readonly giphyUrl = 'https://api.giphy.com/v1/gifs/search';
   static readonly giphyApiKey = 'fplmvx8SXBNfVr2lvEKkibWPwyky5KXG'; // putting this key here hurts my soul
 
@@ -21,10 +20,10 @@ export class GiphyService {
   currentSearchTerm = '';
   pageSize = 20;
 
-  imageResult = [];
+  imageResult: GifData[] = [];
 
-  searchResultsSubject = new Subject<Array<GifData>>();
-  searchResults$ = new Observable<Array<GifData>>();
+  searchResultsSubject = new Subject<GifData[]>();
+  searchResults$ = new Observable<GifData[]>();
 
   searchRequest = new Subject<SearchReqeust>();
   resetSearch = new Subject<any>();
@@ -34,9 +33,7 @@ export class GiphyService {
 
     // The requests are being fed in as stream, right now i'm just filtering out any potential duplicate requests
     // but it could be used for other things such as throttling
-    this.searchRequest.pipe(
-      distinct(request => request.offset, this.resetSearch),
-    ).subscribe((request) => {
+    this.searchRequest.pipe(distinct(request => request.offset, this.resetSearch)).subscribe(request => {
       this.getSearchResults(request.searchTerm, request.offset, request.pageSize);
     });
   }
@@ -48,10 +45,10 @@ export class GiphyService {
       limit: pageSize.toString(),
       offset: offset.toString(),
       rating: this.rating,
-      lang: this.lang
+      lang: this.lang,
     };
 
-    this.http.get<GiphyResult>(GiphyService.giphyUrl, { params }).subscribe((giphyResult) => {
+    this.http.get<GiphyResult>(GiphyService.giphyUrl, { params }).subscribe(giphyResult => {
       this.imageResult = this.imageResult.concat(giphyResult.data);
       this.currentOffset = giphyResult.pagination.offset + giphyResult.pagination.count;
 
@@ -69,11 +66,19 @@ export class GiphyService {
     // this is just a flush observable for the distinct operator
     this.resetSearch.next(null);
 
-    this.searchRequest.next({ searchTerm: this.currentSearchTerm, offset: this.currentOffset, pageSize: this.pageSize });
+    this.searchRequest.next({
+      searchTerm: this.currentSearchTerm,
+      offset: this.currentOffset,
+      pageSize: this.pageSize,
+    });
   }
 
   next() {
-    this.searchRequest.next({ searchTerm: this.currentSearchTerm, offset: this.currentOffset, pageSize: this.pageSize });
+    this.searchRequest.next({
+      searchTerm: this.currentSearchTerm,
+      offset: this.currentOffset,
+      pageSize: this.pageSize,
+    });
   }
 
   setPageSize(size: number) {
