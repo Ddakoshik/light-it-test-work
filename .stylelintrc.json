@@ -12,13 +12,6 @@
           {
             "ignoreAtRules": ["function", "if", "each", "include", "mixin", "return"]
           }
-        ],
-        "font-family-no-missing-generic-family-keyword": [
-          true,
-          {
-            "ignoreFontFamilies": ["icomoon"]
-          }
         ]
-
     }
 }

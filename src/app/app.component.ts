@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
+
+import { GiphyService } from './giphy.service';
 
 @Component({
   selector: 'app-root',
@@ -6,5 +8,19 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'light-it-test-work';
+
+  searchTerm: string  = '';
+
+  @HostListener('window:scroll')
+  onScroll() {
+    if ((window.innerHeight + window.scrollY) >= document.body.scrollHeight) {
+      this.giphyService.next();
+    }
+  }
+
+  constructor(public giphyService: GiphyService) { }
+
+  search() {
+    this.giphyService.search(this.searchTerm);
+  }
 }
