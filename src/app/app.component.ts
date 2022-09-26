@@ -1,27 +1,31 @@
-import { Component, HostListener } from '@angular/core';
-
+import { Component } from '@angular/core';
 import { GiphyService } from './giphy.service';
+import { PageEvent } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
+  private previousSearchTerm = '';
 
-  searchTerm: string  = '';
-  // searchTerm: string  = '';
-
-  @HostListener('window:scroll')
-  onScroll() {
-      if ((window.innerHeight + window.scrollY) >= document.body.scrollHeight) {
-        this.giphyService.next();
-      }
+  constructor(public giphyService: GiphyService) {
+    this.giphyService.pageSize;
   }
 
-  constructor(public giphyService: GiphyService) { }
+  public search(searchTerm: string): void {
+    if (this.previousSearchTerm !== searchTerm) {
+      this.previousSearchTerm = searchTerm;
+      this.giphyService.search(searchTerm);
+    }
+  }
 
-  search() {
-    this.giphyService.search(this.searchTerm);
+  public updatePageOptions(event: PageEvent) {
+    this.giphyService.setPageSize(event.pageSize);
+
+    if (event.pageIndex !== event.previousPageIndex) {
+      this.giphyService.changePage(event.pageIndex);
+    }
   }
 }

@@ -1,18 +1,32 @@
-<div class="flex bg-blue-300 py-4 justify-center items-center fixed top-0 z-100 w-full inset-x-0 border-b border-gray-400 shadow">
-  
-  <input class="text-gray-700 max-w-xl py-2 px-4 mx-4 shadow border rounded" 
-         type="text"
-         placeholder="GIF Search"
-         [(ngModel)]="searchTerm">
-  <button class="bg-blue-600 hover:bg-blue-800 text-white py-2 px-4 shadow rounded"
-          (click)="search()">
-    Search
-  </button>
+<div class="w-full">
+  <app-multi-tag-search (searchTermUpdate)="search($event)"></app-multi-tag-search>
 </div>
 
+<ng-container *ngIf="!!giphyService.totalCount">
+  <mat-paginator
+    *ngIf="giphyService.totalCount"
+    [length]="giphyService.totalCount"
+    [pageSize]="giphyService.pageSize"
+    [pageSizeOptions]="[9, 18, 27, 90]"
+    aria-label="Select page"
+    (page)="updatePageOptions($event)"
+  >
+  </mat-paginator>
+</ng-container>
+
+<ng-container *ngIf="!giphyService.totalCount && !giphyService.currentSearchTerm.length">
+  <h1>Type Search Tag and Press Enter</h1>
+</ng-container>
+
+<ng-container *ngIf="!giphyService.totalCount && !!giphyService.currentSearchTerm.length">
+  <h1>No Result Found For This Serach Tags</h1>
+</ng-container>
+
 <div class="result-panel">
-  <div *ngFor="let result of giphyService.searchResults$ | async" 
-        class="flex justify-center flex-col w-full h-full shadow rounded overflow-hidden bg-gray-200">
-      <img [src]="result.images.fixed_width.url" [alt]="result.title">
+  <div
+    *ngFor="let result of giphyService.searchResults$ | async"
+    class="flex justify-center flex-col w-full h-full shadow rounded overflow-hidden bg-gray-200 aspect-square"
+  >
+    <img [src]="result.images.fixed_width.url" [alt]="result.title" />
   </div>
 </div>

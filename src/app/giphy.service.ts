@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 
 import { GiphyResult, GifData, SearchReqeust } from './gif.interface';
 
-import { Subject, Observable } from 'rxjs';
+import { Subject, Observable, BehaviorSubject } from 'rxjs';
 import { filter, distinct, tap, distinctUntilChanged } from 'rxjs/operators';
 
 @Injectable({
@@ -11,31 +11,35 @@ import { filter, distinct, tap, distinctUntilChanged } from 'rxjs/operators';
 })
 export class GiphyService {
   static readonly giphyUrl = 'https://api.giphy.com/v1/gifs/search';
-  static readonly giphyApiKey = 'fplmvx8SXBNfVr2lvEKkibWPwyky5KXG'; // putting this key here hurts my soul
+  static readonly giphyApiKey = '2qqbSj6tHH8aYHBhH249Xk122bM84PJF'; // putting this key here hurts my soul
 
   private readonly rating = 'G';
   private readonly lang = 'en';
 
   currentOffset = 0;
   currentSearchTerm = '';
-  pageSize = 20;
+  pageSize = 9;
+  totalCount = 0;
 
   imageResult: GifData[] = [];
 
   searchResultsSubject = new Subject<GifData[]>();
   searchResults$ = new Observable<GifData[]>();
 
-  searchRequest = new Subject<SearchReqeust>();
+  searchRequest = new BehaviorSubject<SearchReqeust>({
+    searchTerm: this.currentSearchTerm,
+    offset: this.currentOffset,
+    pageSize: this.pageSize,
+  });
   resetSearch = new Subject<any>();
 
   constructor(private http: HttpClient) {
     this.searchResults$ = this.searchResultsSubject.asObservable();
-
-    // The requests are being fed in as stream, right now i'm just filtering out any potential duplicate requests
-    // but it could be used for other things such as throttling
-    this.searchRequest.pipe(distinct(request => request.offset, this.resetSearch)).subscribe(request => {
-      this.getSearchResults(request.searchTerm, request.offset, request.pageSize);
-    });
+    this.searchRequest
+      .pipe(distinct(request => request.offset || request.pageSize, this.resetSearch))
+      .subscribe(request => {
+        this.getSearchResults(request.searchTerm, request.offset, request.pageSize);
+      });
   }
 
   private getSearchResults(searchTerm: string, offset: number, pageSize: number) {
@@ -50,9 +54,14 @@ export class GiphyService {
 
     this.http.get<GiphyResult>(GiphyService.giphyUrl, { params }).subscribe(giphyResult => {
       this.imageResult = this.imageResult.concat(giphyResult.data);
-      this.currentOffset = giphyResult.pagination.offset + giphyResult.pagination.count;
+      //   this.currentOffset = giphyResult.pagination.offset + giphyResult.pagination.count;
+      this.totalCount = giphyResult.pagination.total_count;
 
-      this.searchResultsSubject.next(this.imageResult);
+      const resultAfterPaging = this.imageResult.filter((item, index) => {
+        return index >= this.currentOffset && index < this.currentOffset + this.pageSize;
+      });
+
+      this.searchResultsSubject.next(resultAfterPaging);
     });
   }
 
@@ -83,5 +92,25 @@ export class GiphyService {
 
   setPageSize(size: number) {
     this.pageSize = size;
+    this.changePage(0);
+  }
+
+  changePage(pageIndex: number) {
+    const isNeadLoadmoreImageOnFirstPage = pageIndex === 0 && this.imageResult.length < this.pageSize;
+    this.currentOffset = this.pageSize * pageIndex;
+
+    const resultAfterPaging = this.imageResult.filter((item, index) => {
+      return index >= this.currentOffset && index < this.currentOffset + this.pageSize;
+    });
+
+    if (resultAfterPaging.length === this.pageSize) {
+      this.searchResultsSubject.next(resultAfterPaging);
+    } else {
+      this.searchRequest.next({
+        searchTerm: this.currentSearchTerm,
+        offset: isNeadLoadmoreImageOnFirstPage ? this.pageSize - this.imageResult.length : this.pageSize * pageIndex,
+        pageSize: isNeadLoadmoreImageOnFirstPage ? this.pageSize - this.imageResult.length : this.pageSize,
+      });
+    }
   }
 }

@@ -3,6 +3,7 @@
 export interface GiphyResult {
   data: GifData[];
   pagination: {
+    total_count: number;
     count: number;
     offset: number;
   };
